@@ -1,16 +1,14 @@
 // I initially wanted to use a higher-level charts module, but since I needed more
 // customizability I used the underlying lib (unovis) directly — same as the Vue app.
 
-import { useEffect, useMemo } from 'react'
+import { useMemo } from 'react'
 import { VisXYContainer, VisGroupedBar, VisAxis, VisTooltip, VisXYLabels } from '@unovis/react'
 import { GroupedBar } from '@unovis/ts'
-import { HugeiconsIcon } from '@hugeicons/react'
-import { Alert02Icon } from '@hugeicons/core-free-icons'
-import { Skeleton } from '@/components/ui/skeleton'
-import { useResponseRates } from '@/hooks/useResponseRates'
 import { CHANNELS } from '@/domain/channels'
 import { getColorWithAlpha } from '@/domain/colors'
-import type { Periods } from '@/domain/periods'
+import type { ChannelRow } from '@/domain/responseStats'
+import { ChartState, ChartLegend } from '@/components/stats/chartShared'
+import { buildBarTooltip, percentFormatter } from '@/components/stats/chartHelpers'
 
 interface Bar {
   x: number
@@ -36,7 +34,9 @@ interface Evolution {
 }
 
 interface ResponseRateChartProps {
-  periods: Periods
+  rows: ChannelRow[]
+  pending: boolean
+  error: string | null
 }
 
 const PAIR_GAP = 1
@@ -46,36 +46,12 @@ const channelColors: Record<string, string> = Object.fromEntries(
   CHANNELS.map(channel => [channel.label, channel.color])
 )
 
-function percentFormatter(value: number | Date): string {
-  return `${value}%`
-}
+const LEGEND_ITEMS = [
+  { color: '#737373', label: 'Période actuelle' },
+  { color: 'rgba(115, 115, 115, 0.4)', label: 'Période précédente' }
+]
 
-// HTML content for the tooltip. Not able to inject it using JSX (unovis tooltips are raw HTML).
-function getTooltipHtml(bar: Bar): string {
-  const noReply = bar.total - bar.replied
-  return `<div style="min-width:200px">
-    <div style="font-size:13px;font-weight:600;color:#111827">${bar.channel}</div>
-    <div style="margin-top:6px;display:flex;align-items:center;justify-content:space-between;gap:16px">
-      <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:#6b7280">
-        <span style="width:8px;height:8px;border-radius:9999px;background:${bar.color}"></span>${bar.period}
-      </span>
-      <span style="font-size:12px;font-weight:600;color:#111827">${percentFormatter(bar.value)}</span>
-    </div>
-    <div style="padding-left:14px;font-size:11px;color:#9ca3af">${bar.replied} avec réponse · ${noReply} sans réponse</div>
-  </div>`
-}
-
-const tooltipTriggers = {
-  [GroupedBar.selectors.bar]: getTooltipHtml
-}
-
-export function ResponseRateChart({ periods }: ResponseRateChartProps) {
-  const { rows, pending, error, refresh } = useResponseRates()
-
-  useEffect(() => {
-    void refresh(periods)
-  }, [periods, refresh])
-
+export function ResponseRateChart({ rows, pending, error }: ResponseRateChartProps) {
   const hasData = useMemo(
     () => rows.some(row => row.currentTotal > 0 || row.previousTotal > 0),
     [rows]
@@ -138,86 +114,71 @@ export function ResponseRateChart({ periods }: ResponseRateChartProps) {
     [rows, lift]
   )
 
-  return (
-    <div className="min-h-80">
-      {error ? (
-        <div className="flex h-80 flex-col items-center justify-center gap-2 text-center">
-          <HugeiconsIcon icon={Alert02Icon} className="size-8 text-destructive" />
-          <p className="text-sm text-muted-foreground">
-            Impossible de charger les statistiques.
-          </p>
-          <p className="text-xs text-muted-foreground/70">{error}</p>
-        </div>
-      ) : pending ? (
-        <Skeleton className="h-80 w-full" />
-      ) : !hasData ? (
-        <div className="flex h-80 items-center justify-center text-sm text-muted-foreground">
-          Aucune donnée sur cette période.
-        </div>
-      ) : (
-        <div>
-          <VisXYContainer
-            height={320}
-            yDomain={yDomain}
-            padding={{ top: 8, right: 8, bottom: 8, left: 8 }}
-          >
-            <VisGroupedBar
-              data={bars}
-              x={(bar: Bar) => bar.x}
-              y={(bar: Bar) => bar.value}
-              color={(bar: Bar) => bar.color}
-              roundedCorners={4}
-              barPadding={0.1}
-              groupPadding={0.1}
-            />
-            <VisXYLabels
-              data={labelData}
-              x={(label: BarLabel) => label.x}
-              y={(label: BarLabel) => label.y}
-              label={(label: BarLabel) => percentFormatter(label.value)}
-              color="#4b5563"
-              labelFontSize={11}
-              backgroundColor="transparent"
-              clustering={false}
-            />
-            <VisXYLabels
-              data={evolutionData}
-              x={(item: Evolution) => item.x}
-              y={(item: Evolution) => item.y}
-              label={(item: Evolution) => item.glyph}
-              color={(item: Evolution) => item.color}
-              labelFontSize={16}
-              backgroundColor="transparent"
-              clustering={false}
-            />
-            <VisAxis
-              type="x"
-              tickValues={tickValues}
-              tickFormat={channelTick}
-              gridLine={false}
-              domainLine={false}
-            />
-            <VisAxis
-              type="y"
-              tickFormat={percentFormatter}
-              gridLine
-              domainLine={false}
-            />
-            <VisTooltip triggers={tooltipTriggers} />
-          </VisXYContainer>
+  const tooltipTriggers = {
+    [GroupedBar.selectors.bar]: (bar: Bar) =>
+      buildBarTooltip({
+        title: bar.channel,
+        sublabel: bar.period,
+        color: bar.color,
+        value: bar.value,
+        replied: bar.replied,
+        total: bar.total
+      })
+  }
 
-          <div className="mt-3 flex items-center justify-center gap-5 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1.5">
-              <span className="size-2.5 rounded-full bg-neutral-500" />
-              Période actuelle
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="size-2.5 rounded-full bg-neutral-500/40" />
-              Période précédente
-            </span>
-          </div>
-        </div>
-      )}
-    </div>
+  return (
+    <ChartState error={error} pending={pending} hasData={hasData}>
+      <VisXYContainer
+        height={320}
+        yDomain={yDomain}
+        padding={{ top: 8, right: 8, bottom: 8, left: 8 }}
+      >
+        <VisGroupedBar
+          data={bars}
+          x={(bar: Bar) => bar.x}
+          y={(bar: Bar) => bar.value}
+          color={(bar: Bar) => bar.color}
+          roundedCorners={4}
+          barPadding={0.1}
+          groupPadding={0.1}
+        />
+        <VisXYLabels
+          data={labelData}
+          x={(label: BarLabel) => label.x}
+          y={(label: BarLabel) => label.y}
+          label={(label: BarLabel) => percentFormatter(label.value)}
+          color="#4b5563"
+          labelFontSize={11}
+          backgroundColor="transparent"
+          clustering={false}
+        />
+        <VisXYLabels
+          data={evolutionData}
+          x={(item: Evolution) => item.x}
+          y={(item: Evolution) => item.y}
+          label={(item: Evolution) => item.glyph}
+          color={(item: Evolution) => item.color}
+          labelFontSize={16}
+          backgroundColor="transparent"
+          clustering={false}
+        />
+        <VisAxis
+          type="x"
+          tickValues={tickValues}
+          tickFormat={channelTick}
+          gridLine={false}
+          domainLine={false}
+        />
+        <VisAxis
+          type="y"
+          tickFormat={percentFormatter}
+          gridLine
+          domainLine={false}
+        />
+        <VisTooltip triggers={tooltipTriggers} />
+      </VisXYContainer>
+
+      <ChartLegend items={LEGEND_ITEMS} />
+    </ChartState>
   )
 }

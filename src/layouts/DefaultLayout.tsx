@@ -5,7 +5,7 @@ export function DefaultLayout() {
   return (
     <div className="flex h-screen bg-background">
       <AppSidebar />
-      <main className="mx-auto max-w-300 flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto">
         <Outlet />
       </main>
     </div>

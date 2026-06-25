@@ -2,17 +2,12 @@ import { useCallback, useMemo, useState } from 'react'
 import { nhost } from '@/lib/nhost'
 import { BAPTISTE_USER_ID } from '@/domain/constants'
 import type { Periods } from '@/domain/periods'
-import {
-  buildQuery,
-  getRowsFromResult,
-  type AggregateResult,
-  type ChannelRow
-} from '@/domain/responseRatesQuery'
+import { buildStatsQuery, type StatRow } from '@/domain/responseStats'
 
-export function useResponseRates() {
-  const query = useMemo(() => buildQuery(), [])
+export function useResponseStats() {
+  const query = useMemo(() => buildStatsQuery(), [])
 
-  const [rows, setRows] = useState<ChannelRow[]>([])
+  const [rows, setRows] = useState<StatRow[]>([])
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -21,7 +16,7 @@ export function useResponseRates() {
     setError(null)
     try {
       const { current, previous } = periods
-      const { body } = await nhost.graphql.request<Record<string, AggregateResult>>({
+      const { body } = await nhost.graphql.request<{ response_rate_stats: StatRow[] }>({
         query,
         variables: {
           userId: BAPTISTE_USER_ID,
@@ -36,8 +31,7 @@ export function useResponseRates() {
         throw new Error(body.errors[0]?.message ?? 'Erreur GraphQL')
       }
 
-      const data = body.data ?? {}
-      setRows(getRowsFromResult(data))
+      setRows(body.data?.response_rate_stats ?? [])
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Erreur inconnue lors du chargement des statistiques')
       setRows([])
