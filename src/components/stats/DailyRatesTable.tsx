@@ -27,7 +27,7 @@ export function DailyRatesTable({ rows, pending, error }: DailyRatesTableProps) 
   return (
     <ChartState error={error} pending={pending} hasData={hasData}>
       <Table>
-        <TableHeader>
+        <TableHeader className='bg-accent'>
           <TableRow>
             <TableHead>Jour</TableHead>
             {CHANNELS.map(channel => (
@@ -48,9 +48,9 @@ export function DailyRatesTable({ rows, pending, error }: DailyRatesTableProps) 
                 const stat = row.stats[channel.key]
                 return (
                   <TableCell key={channel.key} className="text-right">
-                    {percentFormatter(stat.rate)}
+                    {stat.replied} / {stat.total}
                     <span className="ml-1 text-xs text-muted-foreground">
-                      ({stat.replied}/{stat.total})
+                      ({percentFormatter(stat.rate)})
                     </span>
                   </TableCell>
                 )

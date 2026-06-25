@@ -36,7 +36,7 @@ export function ChannelRatesTable({ rows, pending, error }: ChannelRatesTablePro
   return (
     <ChartState error={error} pending={pending} hasData={hasData}>
       <Table>
-        <TableHeader>
+        <TableHeader className='bg-accent'>
           <TableRow>
             <TableHead>Canal</TableHead>
             <TableHead className="text-right">Période actuelle</TableHead>
@@ -49,15 +49,15 @@ export function ChannelRatesTable({ rows, pending, error }: ChannelRatesTablePro
             <TableRow key={row.channel}>
               <TableCell className="font-medium">{row.channel}</TableCell>
               <TableCell className="text-right">
-                {percentFormatter(row.currentRate)}
-                <span className="ml-1 text-xs text-muted-foreground">
-                  ({row.currentReplied}/{row.currentTotal})
+                {row.currentReplied} / {row.currentTotal}
+                <span className="ml-2 text-xs text-muted-foreground">
+                  ({percentFormatter(row.currentRate)})
                 </span>
               </TableCell>
               <TableCell className="text-right">
-                {percentFormatter(row.previousRate)}
-                <span className="ml-1 text-xs text-muted-foreground">
-                  ({row.previousReplied}/{row.previousTotal})
+                {row.previousReplied} / {row.previousTotal}
+                <span className="ml-2 text-xs text-muted-foreground">
+                  ({percentFormatter(row.previousRate)})
                 </span>
               </TableCell>
               <TableCell className="text-right tabular-nums">

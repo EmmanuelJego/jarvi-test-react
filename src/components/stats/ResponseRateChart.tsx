@@ -7,7 +7,7 @@ import { GroupedBar } from '@unovis/ts'
 import { CHANNELS } from '@/domain/channels'
 import { getColorWithAlpha } from '@/domain/colors'
 import type { ChannelRow } from '@/domain/responseStats'
-import { ChartState, ChartLegend } from '@/components/stats/chartShared'
+import { ChartState } from '@/components/stats/chartShared'
 import { buildBarTooltip, percentFormatter } from '@/components/stats/chartHelpers'
 
 interface Bar {
@@ -45,11 +45,6 @@ const CHANNEL_GAP = 3
 const channelColors: Record<string, string> = Object.fromEntries(
   CHANNELS.map(channel => [channel.label, channel.color])
 )
-
-const LEGEND_ITEMS = [
-  { color: '#737373', label: 'Période actuelle' },
-  { color: 'rgba(115, 115, 115, 0.4)', label: 'Période précédente' }
-]
 
 export function ResponseRateChart({ rows, pending, error }: ResponseRateChartProps) {
   const hasData = useMemo(
@@ -177,8 +172,6 @@ export function ResponseRateChart({ rows, pending, error }: ResponseRateChartPro
         />
         <VisTooltip triggers={tooltipTriggers} />
       </VisXYContainer>
-
-      <ChartLegend items={LEGEND_ITEMS} />
     </ChartState>
   )
 }

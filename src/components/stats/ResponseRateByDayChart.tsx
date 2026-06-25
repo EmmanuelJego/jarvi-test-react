@@ -4,7 +4,7 @@ import { GroupedBar } from '@unovis/ts'
 import { CHANNELS } from '@/domain/channels'
 import { WEEKDAYS_SHORT, WEEKDAYS_LONG } from '@/domain/dates'
 import type { DailyRow } from '@/domain/responseStats'
-import { ChartState, ChartLegend } from '@/components/stats/chartShared'
+import { ChartState } from '@/components/stats/chartShared'
 import { buildBarTooltip, percentFormatter } from '@/components/stats/chartHelpers'
 
 interface Bar {
@@ -25,8 +25,6 @@ interface ResponseRateByDayChartProps {
 
 const BAR_GAP = 1
 const GROUP_GAP = 4 // 3 bars (0,1,2) + a gap before the next weekday group
-
-const LEGEND_ITEMS = CHANNELS.map(channel => ({ color: channel.color, label: channel.label }))
 
 export function ResponseRateByDayChart({ rows, pending, error }: ResponseRateByDayChartProps) {
   const hasData = useMemo(
@@ -116,8 +114,6 @@ export function ResponseRateByDayChart({ rows, pending, error }: ResponseRateByD
         />
         <VisTooltip triggers={tooltipTriggers} />
       </VisXYContainer>
-
-      <ChartLegend items={LEGEND_ITEMS} />
     </ChartState>
   )
 }

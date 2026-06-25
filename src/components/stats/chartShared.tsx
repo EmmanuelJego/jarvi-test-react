@@ -50,12 +50,12 @@ export function ChartState({
   return <>{children}</>
 }
 
-export function ChartLegend({ items }: { items: LegendItem[] }) {
+export function ChartLegend({ items, className }: { items: LegendItem[], className?: string }) {
   return (
-    <div className="mt-3 flex flex-wrap items-center justify-center gap-5 text-xs text-muted-foreground">
+    <div className={"flex flex-wrap items-center gap-5 text-muted-foreground " + className}>
       {items.map(item => (
         <span key={item.label} className="flex items-center gap-1.5">
-          <span className="size-2.5 rounded-full" style={{ background: item.color }} />
+          <span className="size-3 rounded-full" style={{ background: item.color }} />
           {item.label}
         </span>
       ))}
