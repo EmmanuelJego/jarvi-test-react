@@ -7,6 +7,8 @@ import {
   TableHeader,
   TableRow
 } from '@/components/ui/table'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { StarIcon } from '@hugeicons/core-free-icons'
 import type { ChannelRow } from '@/domain/responseStats'
 import { ChartState } from '@/components/stats/chartShared'
 import { percentFormatter } from '@/components/stats/chartHelpers'
@@ -33,6 +35,12 @@ export function ChannelRatesTable({ rows, pending, error }: ChannelRatesTablePro
     [rows]
   )
 
+  // Best-performing channel in the current period (highlighted row).
+  const bestCurrentRate = useMemo(
+    () => Math.max(0, ...rows.map(row => row.currentRate)),
+    [rows]
+  )
+
   return (
     <ChartState error={error} pending={pending} hasData={hasData}>
       <Table>
@@ -47,7 +55,14 @@ export function ChannelRatesTable({ rows, pending, error }: ChannelRatesTablePro
         <TableBody>
           {rows.map(row => (
             <TableRow key={row.channel}>
-              <TableCell className="font-medium">{row.channel}</TableCell>
+              <TableCell className="font-medium">
+                <span className="inline-flex items-center gap-1.5">
+                  {row.channel}
+                  {row.currentRate === bestCurrentRate && bestCurrentRate > 0 && (
+                    <HugeiconsIcon icon={StarIcon} className="size-3 text-yellow-500" />
+                  )}
+                </span>
+              </TableCell>
               <TableCell className="text-right">
                 {row.currentReplied} / {row.currentTotal}
                 <span className="ml-2 text-xs text-muted-foreground">
